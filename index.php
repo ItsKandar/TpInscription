@@ -1,49 +1,10 @@
 <?php
-session_start();
-require 'config.php';
-
-if (isset($_POST['register'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-
-    $salt = bin2hex(openssl_random_pseudo_bytes(32));
-    $hashed_password = hash('sha256', $password . $salt);
-
-    $stmt = $conn->prepare("INSERT INTO users (username, password, salt) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $username, $hashed_password, $salt);
-    $stmt->execute();
-    $stmt->close();
-}
-
-if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-
-    $stmt = $conn->prepare("SELECT id, password, salt FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $stmt->bind_result($id, $hashed_password, $salt);
-    $stmt->fetch();
-
-    if (hash('sha256', $password . $salt) == $hashed_password) {
-        $_SESSION['user_id'] = $id;
-    }
-    $stmt->close();
-}
-
-if (isset($_POST['logout'])) {
-    session_destroy();
-    header("Location: index.php");
-}
-
-if (isset($_POST['delete'])) {
-    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->bind_param("i", $_SESSION['user_id']);
-    $stmt->execute();
-    $stmt->close();
-    session_destroy();
-    header("Location: index.php");
-}
+/**
+ * Ce fichier est le script de la page de connexion et d'inscription pour les utilisateurs.
+ * Il gère l'affichage du formulaire d'inscription et de connexion, et la gestion de la session utilisateur.
+ * Il utilise le fichier 'account.php' pour les opérations liées au compte utilisateur.
+ */
+require 'account.php';
 ?>
 
 <!DOCTYPE html>
@@ -52,6 +13,7 @@ if (isset($_POST['delete'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion</title>
+    <!-- Styles CSS pour la mise en forme de la page -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -126,20 +88,26 @@ if (isset($_POST['delete'])) {
             box-sizing: border-box;
         }
     </style>
+    <!-- Charge les icônes Font Awesome -->
     <script src="https://kit.fontawesome.com/ba85ac3084.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
+        <!-- Affiche les boutons de déconnexion et suppression du compte si l'utilisateur est connecté -->
         <?php if (isset($_SESSION['user_id'])): ?>
             <p>Bienvenue !</p>
+            <!-- Formulaire pour se déconnecter -->
             <form action="" method="POST">
                 <input type="submit" name="logout" value="Se deconnecter">
             </form>
+            <!-- Formulaire pour supprimer le compte -->
             <form action="" method="POST">
                 <input type="submit" name="delete" value="Supprimer mon compte">
             </form>
+        <!-- Sinon, affiche les formulaires d'inscription et de connexion -->
         <?php else: ?>
             <h2>Creer un compte</h2>
+            <!-- Formulaire d'inscription -->
             <form action="" method="POST">
                 <label for="username">Nom d'utilisateur:</label>
                 <input type="text" name="username" required>
@@ -152,12 +120,14 @@ if (isset($_POST['delete'])) {
                 </div>
                 <input type="submit" name="register" value="Créer un compte">
             </form>
+            <!-- Séparateur entre les formulaires d'inscription et de connexion -->
             <div class="separator">
                 <hr>
                 <span>ou</span>
                 <hr>
             </div>
             <h2>Se connecter</h2>
+            <!-- Formulaire de connexion -->
             <form action="" method="POST">
                 <label for="username">Nom d'utilisateur:</label>
                 <input type="text" name="username" required>
@@ -171,22 +141,23 @@ if (isset($_POST['delete'])) {
                 <input type="submit" name="login" value="Connexion">
             </form>
         <?php endif; ?>
-        </div>
-        <script>
-            function togglePasswordVisibility(passwordFieldId) {
-                const passwordField = document.getElementById(passwordFieldId);
-                const eyeIcon = passwordField.nextElementSibling.firstElementChild;
+    </div>
+    <!-- Script JavaScript pour basculer la visibilité du mot de passe -->
+    <script>
+        function togglePasswordVisibility(passwordFieldId) {
+            const passwordField = document.getElementById(passwordFieldId);
+            const eyeIcon = passwordField.nextElementSibling.firstElementChild;
 
-                if (passwordField.type === 'password') {
-                    passwordField.type = 'text';
-                    eyeIcon.classList.remove('fa-eye');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
                     eyeIcon.classList.add('fa-eye-slash');
-                } else {
-                    passwordField.type = 'password';
-                    eyeIcon.classList.remove('fa-eye-slash');
-                    eyeIcon.classList.add('fa-eye');
-                }
+            } else {
+                passwordField.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
             }
-        </script>
-    </body>
+        }
+    </script>
+</body>
 </html> 
